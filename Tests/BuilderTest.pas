@@ -18,6 +18,11 @@ type
       [Test] procedure when_applying_prety_prent;
       [Test] procedure when_no_prety_prent;
     end;
+
+    [TestFixture]
+    TComposeTest = class
+      [Test] procedure when_add_member_using_anonymous_function;
+    end;
   end;
 
 implementation
@@ -70,7 +75,39 @@ begin
   Assert.AreEqual(expected, json);
 end;
 
+{ TBuilderTest.TComposeTest }
+
+procedure TBuilderTest.TComposeTest.when_add_member_using_anonymous_function;
+var
+  json, expected: string;
+begin
+  expected := '{"variable":{"name":"xyz","value":12345},"constant":{"name":"c","value":"foo"}}';
+
+  json :=
+    TFluentJSON.AsObject
+    .AddObject('variable',
+      procedure (builder: IFluentJSONBuilder)
+      begin
+        builder
+          .AddString('name', 'xyz')
+          .AddNumber('value', 12345)
+      end
+    )
+    .AddObject('constant',
+      procedure (builder: IFluentJSONBuilder)
+      begin
+        builder
+          .AddString('name', 'c')
+          .AddString('value', 'foo')
+      end
+    )
+    .ToString(false);
+
+  Assert.AreEqual(expected, json);
+end;
+
 initialization
   TDUnitX.RegisterTestFixture(TBuilderTest);
   TDUnitX.RegisterTestFixture(TBuilderTest.TFormatTest);
+  TDUnitX.RegisterTestFixture(TBuilderTest.TComposeTest);
 end.

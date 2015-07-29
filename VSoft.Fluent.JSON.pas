@@ -28,10 +28,14 @@ unit VSoft.Fluent.JSON;
 interface
 
 type
+  IFluentJSONBuilder = interface;
+  IObjectBuilderProc = reference to procedure (builder: IFluentJSONBuilder);
+
   IFluentJSONBuilder = interface
   ['{9574F82E-B81D-49B9-AA04-60EB87C60E8B}']
     function AddObject : IFluentJSONBuilder;overload;
     function AddObject(const name : string) : IFluentJSONBuilder;overload;
+    function AddObject(const name : string; const proc: IObjectBuilderProc) : IFluentJSONBuilder;overload;
     function AddNull(const name : string) : IFluentJSONBuilder;
     function AddString(const name : string; const value : string) : IFluentJSONBuilder;overload;
     function AddString(const value : string) : IFluentJSONBuilder;overload;
@@ -92,13 +96,17 @@ type
 
   TFluentJSONBuilder = class(TInterfacedObject,IFluentJSONBuilder)
   private
+    FOwnElement: boolean;
     FObjects : TList<TJSONElement>;
     FStack   : TStack<TJSONElement>;
     FCurrentElement : TJSONElement;
     FMarkedObjects  : TList<TJSONElement>;
+  private
+    constructor Create(const ownElement: boolean); overload;
   protected
     function AddObject : IFluentJSONBuilder;overload;
     function AddObject(const name : string) : IFluentJSONBuilder;overload;
+    function AddObject(const name : string; const proc: IObjectBuilderProc) : IFluentJSONBuilder;overload;
     function AddNull(const name : string) : IFluentJSONBuilder;
     function AddString(const name : string; const value : string) : IFluentJSONBuilder;overload;
     function AddString(const value : string) : IFluentJSONBuilder;overload;
@@ -113,7 +121,7 @@ type
     function Return : IFluentJSONBuilder;
     function ToString(const pretyPrint: boolean): string; overload;
   public
-    constructor Create;
+    constructor Create; overload;
     destructor Destroy;override;
     function ToString : string; overload; override;
   end;
@@ -272,6 +280,34 @@ begin
   result := Self;
 end;
 
+function TFluentJSONBuilder.AddObject(const name : string; const proc: IObjectBuilderProc) : IFluentJSONBuilder;
+var
+  builder: TFluentJSONBuilder;
+  e: TJSONElement;
+begin
+  Assert(Assigned(proc));
+
+  builder := TFluentJSONBuilder.Create(false);
+  try
+    builder.AddObject(name);
+    proc(builder);
+
+    if FCurrentElement = nil then begin
+      FObjects.AddRange(builder.FObjects);
+    end
+    else begin
+      for e in builder.FObjects do begin
+        e.Parent := FCurrentElement;
+        FCurrentElement.Members.Add(e);
+      end;
+    end;
+
+    Result := Self;
+  finally
+    IInterface(builder)._Release;
+  end;
+end;
+
 function TFluentJSONBuilder.AddString(const value: string): IFluentJSONBuilder;
 var
   newElement : TJSONElement;
@@ -304,6 +340,12 @@ end;
 
 constructor TFluentJSONBuilder.Create;
 begin
+  Self.Create(true);
+end;
+
+constructor TFluentJSONBuilder.Create(const ownElement: boolean);
+begin
+  FOwnElement := ownElement;
   FObjects := TList<TJSONElement>.Create;
   FStack   := TStack<TJSONElement>.Create;
   FMarkedObjects  := TList<TJSONElement>.Create;
@@ -314,10 +356,13 @@ destructor TFluentJSONBuilder.Destroy;
 var
   element : TJSONElement;
 begin
-  for element in FObjects do
-  begin
-    element.Free;
+  if FOwnElement then begin
+    for element in FObjects do
+    begin
+      element.Free;
+    end;
   end;
+
   FObjects.Free;
   FStack.Free;
   inherited;
