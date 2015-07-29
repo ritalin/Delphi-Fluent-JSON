@@ -11,7 +11,8 @@ uses
   DUnitX.Loggers.Console,
   DUnitX.Loggers.Xml.NUnit,
   DUnitX.TestFramework,
-  BuilderTest in 'BuilderTest.pas';
+  BuilderTest in 'BuilderTest.pas',
+  VSoft.Fluent.JSON in '..\VSoft.Fluent.JSON.pas';
 
 var
   runner : ITestRunner;

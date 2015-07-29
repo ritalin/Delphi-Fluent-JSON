@@ -50,6 +50,7 @@ type
   //factory class
   TFluentJSON = class
     class function CreateJSONBuilder : IFluentJSONBuilder;
+    class function AsObject : IFluentJSONBuilder;
   end;
 
 implementation
@@ -118,6 +119,11 @@ type
 class function TFluentJSON.CreateJSONBuilder: IFluentJSONBuilder;
 begin
   result := TFluentJSONBuilder.Create;
+end;
+
+class function TFluentJSON.AsObject : IFluentJSONBuilder;
+begin
+  Result := CreateJSONBuilder.AddObject;
 end;
 
 { TFluentJSONBuilder }
