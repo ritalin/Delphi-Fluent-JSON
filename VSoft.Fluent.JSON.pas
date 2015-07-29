@@ -44,13 +44,15 @@ type
     function Up : IFluentJSONBuilder;
     function Mark : IFluentJSONBuilder;
     function Return : IFluentJSONBuilder;
-    function ToString : string;
+    function ToString : string; overload;
+    function ToString(const pretyPrint: boolean) : string; overload;
   end;
 
   //factory class
   TFluentJSON = class
     class function CreateJSONBuilder : IFluentJSONBuilder;
     class function AsObject : IFluentJSONBuilder;
+    class function AsArray : IFluentJSONBuilder;
   end;
 
 implementation
@@ -77,13 +79,14 @@ type
         etDouble: (DoubleValue: double);
         etInteger: (IntegerValue: Int64);
       end;
-   
+
     function GetIndentLevel  : integer;
     function GetIndentString : string;
     constructor Create(const AElementType : TJSONElementType; const formatString : string = '');
     destructor Destroy;override;
     function JSONEscapeString(const value : string) : string;
-    function ToString : string;override;
+    function ToString : string; overload; override;
+    function ToString(const pretyPrint: boolean) : string; overload;
   end;
 
 
@@ -108,10 +111,11 @@ type
     function Up : IFluentJSONBuilder;
     function Mark : IFluentJSONBuilder;
     function Return : IFluentJSONBuilder;
-    function ToString : string;override;
+    function ToString(const pretyPrint: boolean): string; overload;
   public
     constructor Create;
     destructor Destroy;override;
+    function ToString : string; overload; override;
   end;
 
 { TFluentJSON }
@@ -124,6 +128,11 @@ end;
 class function TFluentJSON.AsObject : IFluentJSONBuilder;
 begin
   Result := CreateJSONBuilder.AddObject;
+end;
+
+class function TFluentJSON.AsArray : IFluentJSONBuilder;
+begin
+  Result := CreateJSONBuilder.AddArray;
 end;
 
 { TFluentJSONBuilder }
@@ -329,11 +338,16 @@ begin
 end;
 
 function TFluentJSONBuilder.ToString: string;
+begin
+  Result := Self.ToString(true);
+end;
+
+function TFluentJSONBuilder.ToString(const pretyPrint: boolean): string;
 var
   element : TJSONElement;
 begin
   for element in FObjects do
-    result := result + element.ToString;
+    result := result + element.ToString(pretyPrint);
 end;
 
 function TFluentJSONBuilder.Up: IFluentJSONBuilder;
@@ -423,12 +437,25 @@ begin
 end;
 
 function TJSONElement.ToString: string;
+begin
+  Result := Self.ToString(true);
+end;
+
+function TJSONElement.ToString(const pretyPrint: boolean): string;
 var
   member : TJSONElement;
   i      : integer;
-  sIndent : string;
+  sIndent, sNewLine : string;
 begin
-  sIndent := GetIndentString;
+  if pretyPrint then begin
+    sIndent := GetIndentString;
+    sNewLine := #13#10;
+  end
+  else begin
+    sIndent := '';
+    sNewLine := '';
+  end;
+
   result := '';
   case ElementType of
     etObject:
@@ -439,19 +466,19 @@ begin
        result := result + '{';
        if Members.Count > 0 then
        begin
-        result := result + #13#10;
+        result := result + sNewLine;
         for i := 0 to Self.Members.Count - 1 do
         begin
           member := Self.Members[i];
-          result := result + member.ToString;
+          result := result + member.ToString(pretyPrint);
           if i < Self.Members.Count - 1 then
             result := result + ',';
-          result := result + #13#10;
+          result := result + sNewLine;
         end;
        end;
        result := result + sIndent + '}';
     end;
-    etArray: 
+    etArray:
     begin
        if Parent <> nil then
        begin
@@ -467,12 +494,12 @@ begin
           member := Members[i];
           if i > 0 then
             result := result + ',' ;
-          result := result + member.ToString;
+          result := result + member.ToString(pretyPrint);
         end;
        end;
        result := result + ']';
     end;
-    etString: 
+    etString:
     begin
       if ((Self.Parent <> nil) and (Self.Parent.ElementType = etArray)) or (Self.Name = '') then
         result := '"' + JSONEscapeString(Self.StringValue) + '"'
@@ -511,3 +538,5 @@ begin
 end;
 
 end.
+
+
