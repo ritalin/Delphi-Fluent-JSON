@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{E31001B7-2D52-4442-BE69-3620F6B45CB2}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="FluentJSONTest.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Tests\FluentJSON.Test.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="FluentJSONTest">
+        <MSBuild Projects="FluentJSONTest.dproj"/>
+    </Target>
+    <Target Name="FluentJSONTest:Clean">
+        <MSBuild Projects="FluentJSONTest.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="FluentJSONTest:Make">
+        <MSBuild Projects="FluentJSONTest.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="FluentJSON_Test">
+        <MSBuild Projects="Tests\FluentJSON.Test.dproj"/>
+    </Target>
+    <Target Name="FluentJSON_Test:Clean">
+        <MSBuild Projects="Tests\FluentJSON.Test.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="FluentJSON_Test:Make">
+        <MSBuild Projects="Tests\FluentJSON.Test.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="FluentJSONTest;FluentJSON_Test"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="FluentJSONTest:Clean;FluentJSON_Test:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="FluentJSONTest:Make;FluentJSON_Test:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
